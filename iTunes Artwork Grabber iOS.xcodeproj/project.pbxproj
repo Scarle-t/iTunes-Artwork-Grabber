@@ -12,6 +12,7 @@
 		A6C6DF6C21B1662E00834FCF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A6C6DF6A21B1662E00834FCF /* Main.storyboard */; };
 		A6C6DF6E21B1662F00834FCF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6C6DF6D21B1662F00834FCF /* Assets.xcassets */; };
 		A6C6DF7121B1662F00834FCF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A6C6DF6F21B1662F00834FCF /* LaunchScreen.storyboard */; };
+		A6C6DF7921B1691300834FCF /* countryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C6DF7821B1691300834FCF /* countryList.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		A6C6DF6D21B1662F00834FCF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A6C6DF7021B1662F00834FCF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A6C6DF7221B1662F00834FCF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A6C6DF7821B1691300834FCF /* countryList.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = countryList.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +56,7 @@
 		A6C6DF6521B1662E00834FCF /* iTunes Artwork Grabber iOS */ = {
 			isa = PBXGroup;
 			children = (
+				A6C6DF7821B1691300834FCF /* countryList.swift */,
 				A6C6DF6621B1662E00834FCF /* AppDelegate.swift */,
 				A6C6DF6821B1662E00834FCF /* ViewController.swift */,
 				A6C6DF6A21B1662E00834FCF /* Main.storyboard */,
@@ -135,6 +138,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A6C6DF7921B1691300834FCF /* countryList.swift in Sources */,
 				A6C6DF6921B1662E00834FCF /* ViewController.swift in Sources */,
 				A6C6DF6721B1662E00834FCF /* AppDelegate.swift in Sources */,
 			);
@@ -285,6 +289,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7WC44F9Y8F;
 				INFOPLIST_FILE = "iTunes Artwork Grabber iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -303,6 +308,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7WC44F9Y8F;
 				INFOPLIST_FILE = "iTunes Artwork Grabber iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
