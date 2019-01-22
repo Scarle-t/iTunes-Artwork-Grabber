@@ -28,6 +28,7 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
         return artworkCell
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectCell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
         let key = keys[indexPath.row]
         let img = imgs[key]
         let alert = UIAlertController(title: key, message: nil, preferredStyle: .actionSheet)
@@ -35,6 +36,12 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
             UIImageWriteToSavedPhotosAlbum(img!, nil, nil, nil)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        if UIDevice.current.modelName == "iPad" || UIDevice.current.modelName == "Simulator"{
+            if let popoverPresentationController = alert.popoverPresentationController{
+                popoverPresentationController.sourceView = collectionView
+                popoverPresentationController.sourceRect = selectCell.artwork.frame
+            }
+        }
         self.present(alert, animated: true, completion: nil)
     }
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
@@ -233,6 +240,7 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
         toolBar.sizeToFit()
         toolBar.setItems([spaceButton, cancelButton], animated: false)
         toolBar.isUserInteractionEnabled = true
+        countryPick.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height/2)
         countryList.inputView = countryPick
         countryList.inputAccessoryView = toolBar
         if countriesArray.count > 0{
@@ -252,6 +260,207 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
 
 class artworkCell: UICollectionViewCell{
     @IBOutlet weak var artwork: UIImageView!
+    @IBOutlet weak var dummyView: UIView!
+}
+
+class trySailViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource{
+    
+    var results = [UIImage]()
+    @IBOutlet weak var artworkList: UICollectionView!
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return results.count
+    }
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
+        
+        cell.artwork.image = results[indexPath.row]
+        
+        return cell
+    }
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectCell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Save to Camera Roll", style: .default, handler: { _ in
+            UIImageWriteToSavedPhotosAlbum(self.results[indexPath.row], nil, nil, nil)
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        if UIDevice.current.modelName == "iPad" || UIDevice.current.modelName == "Simulator"{
+            if let popoverPresentationController = alert.popoverPresentationController{
+                popoverPresentationController.sourceView = collectionView
+                popoverPresentationController.sourceRect = selectCell.artwork.frame
+            }
+        }
+        self.present(alert, animated: true, completion: nil)
+    }
+    
+    func parseJSON(_ data: Data){
+        var jsonResult = NSDictionary()
+        var counter = 0
+        do{
+            jsonResult = try JSONSerialization.jsonObject(with: data, options:.allowFragments) as! NSDictionary
+        } catch let error as NSError {
+            print(error)
+        }
+        if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
+            if resultCount.count > 0{
+                for item in resultCount{
+                    if let jacket = (item as! NSDictionary)["jacketImage"] as? String{
+                        print("Start Download")
+                        
+                            DownloadPhoto().get(url: URL(string: "https://www.sonymusic.co.jp" + jacket.replacingOccurrences(of: "240_240", with: "1000_1000"))!) { data, response, error in
+                                guard let imgData = data, error == nil else { return }
+                                
+                                self.results.append(UIImage(data: imgData)!)
+                                
+                                counter = counter + 1
+                                
+                                if counter == resultCount.count{
+                                    DispatchQueue.main.async {
+                                        print("Download Complete")
+                                        self.artworkList.reloadData()
+                                    }
+                                }
+                            }
+                        
+                    }
+                }
+            }else{
+                DispatchQueue.main.async {
+                    let alert = UIAlertController(title: "Cannot found result", message: nil, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
+            }
+        }
+        
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        artworkList.delegate = self
+        artworkList.dataSource = self
+        
+        var dataString = String()
+        
+        let url: URL = URL(string: "https://www.sonymusic.co.jp/json/artist/trysail/discography/start/0/count/99")!
+        let defaultSession = Foundation.URLSession(configuration: URLSessionConfiguration.default)
+        let task = defaultSession.dataTask(with: url) {
+            (data, response, error) in
+            if error != nil {
+                print("Failed to download data")
+            }else {
+                dataString = String(data: data!, encoding: .utf8)!
+                dataString = dataString.replacingOccurrences(of: "callback(", with: "")
+                dataString = dataString.replacingOccurrences(of: ")", with: "")
+                self.parseJSON(dataString.data(using: .utf8)!)
+            }
+        }
+        task.resume()
+        
+    }
+    
+}
+
+class soraViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource{
+    
+    var results = [UIImage]()
+    @IBOutlet weak var artworkList: UICollectionView!
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return results.count
+    }
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
+        
+        cell.artwork.image = results[indexPath.row]
+        
+        return cell
+    }
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectCell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Save to Camera Roll", style: .default, handler: { _ in
+            UIImageWriteToSavedPhotosAlbum(self.results[indexPath.row], nil, nil, nil)
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        if UIDevice.current.modelName == "iPad" || UIDevice.current.modelName == "Simulator"{
+            if let popoverPresentationController = alert.popoverPresentationController{
+                popoverPresentationController.sourceView = collectionView
+                popoverPresentationController.sourceRect = selectCell.artwork.frame
+            }
+        }
+        self.present(alert, animated: true, completion: nil)
+    }
+    
+    func parseJSON(_ data: Data){
+        var jsonResult = NSDictionary()
+        var counter = 0
+        do{
+            jsonResult = try JSONSerialization.jsonObject(with: data, options:.allowFragments) as! NSDictionary
+        } catch let error as NSError {
+            print(error)
+        }
+        if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
+            if resultCount.count > 0{
+                for item in resultCount{
+                    if let jacket = (item as! NSDictionary)["jacketImage"] as? String{
+                        print("Start Download")
+                        
+                        DownloadPhoto().get(url: URL(string: "https://www.sonymusic.co.jp" + jacket.replacingOccurrences(of: "240_240", with: "1000_1000"))!) { data, response, error in
+                            guard let imgData = data, error == nil else { return }
+                            
+                            self.results.append(UIImage(data: imgData)!)
+                            
+                            counter = counter + 1
+                            
+                            if counter == resultCount.count{
+                                DispatchQueue.main.async {
+                                    print("Download Complete")
+                                    self.artworkList.reloadData()
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+            }else{
+                DispatchQueue.main.async {
+                    let alert = UIAlertController(title: "Cannot found result", message: nil, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
+            }
+        }
+        
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        artworkList.delegate = self
+        artworkList.dataSource = self
+        
+        var dataString = String()
+        
+        let url: URL = URL(string: "https://www.sonymusic.co.jp/json/artist/amamiyasora/discography/start/0/count/99")!
+        let defaultSession = Foundation.URLSession(configuration: URLSessionConfiguration.default)
+        let task = defaultSession.dataTask(with: url) {
+            (data, response, error) in
+            if error != nil {
+                print("Failed to download data")
+            }else {
+                dataString = String(data: data!, encoding: .utf8)!
+                dataString = dataString.replacingOccurrences(of: "callback(", with: "")
+                dataString = dataString.replacingOccurrences(of: ")", with: "")
+                self.parseJSON(dataString.data(using: .utf8)!)
+            }
+        }
+        task.resume()
+        
+    }
+    
 }
 
 class settingsTableViewController: UITableViewController{
@@ -261,8 +470,6 @@ class settingsTableViewController: UITableViewController{
     @IBAction func textChange(_ sender: UITextField) {
         updateDefaults()
     }
-    
-    
     
     @objc func dismissPicker(){
         view.endEditing(true)
@@ -370,4 +577,46 @@ class DownloadPhoto: NSObject {
             completion(data, response, error)
             }.resume()
     }
+}
+
+public extension UIDevice {
+    
+    var modelName: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        
+        switch identifier {
+            
+        case "iPhone3,1", "iPhone3,2", "iPhone3,3", "iPhone4,1":
+            return "iPhone 4/s"
+            
+        case "iPhone5,1", "iPhone5,2", "iPhone5,3", "iPhone5,4", "iPhone6,1", "iPhone6,2", "iPhone8,4":
+            return "iPhone 5/s/c/SE"
+            
+        case "iPhone7,2", "iPhone8,1", "iPhone9,1", "iPhone9,3", "iPhone10,1", "iPhone10,4":
+            return "iPhone 6/s/7/8"
+            
+        case "iPhone7,1", "iPhone8,2", "iPhone9,2", "iPhone9,4", "iPhone10,2", "iPhone10,5":
+            return "iPhone 6/s/7/8 Plus"
+            
+        case "iPhone10,3", "iPhone10,6":
+            return "iPhone X"
+            
+        case "iPad2,1", "iPad2,2", "iPad2,3", "iPad2,4", "iPad3,1", "iPad3,2", "iPad3,3", "iPad3,4", "iPad3,5", "iPad3,6", "iPad4,1", "iPad4,2", "iPad4,3", "iPad5,3", "iPad5,4", "iPad6,11", "iPad6,12", "iPad7,5", "iPad7,6", "iPad2,5", "iPad2,6", "iPad2,7", "iPad4,4", "iPad4,5", "iPad4,6", "iPad4,7", "iPad4,8", "iPad4,9", "iPad5,1", "iPad5,2", "iPad6,3", "iPad6,4", "iPad6,7", "iPad6,8", "iPad7,1", "iPad7,2", "iPad7,3", "iPad7,4":
+            
+            return "iPad"
+            
+        case "i386", "x86_64":
+            return "Simulator"
+            
+        default:
+            return identifier
+        }
+    }
+    
 }
