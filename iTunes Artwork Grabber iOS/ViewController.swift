@@ -62,6 +62,7 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
     @IBOutlet weak var artworkList: UICollectionView!
     @IBOutlet weak var searchBtn: UIButton!
     @IBOutlet weak var spinner: UIActivityIndicatorView!
+    @IBOutlet weak var sourceSeg: UISegmentedControl!
     @IBAction func search(_ sender: UIButton) {
         width = userDefault.integer(forKey: "width")
         height = userDefault.integer(forKey: "height")
@@ -75,13 +76,99 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
         keys.removeAll()
         //imgs.removeAll()
         artworkList.reloadData()
-        for ctry in countries{
-            if ctry.value == countryList.text{
-                getJSON(query: query.text!, code: ctry.key)
-                break
-            }else{
-                continue
+        
+        switch sourceSeg.selectedSegmentIndex{
+        case 0:
+            for ctry in countries{
+                if ctry.value == countryList.text{
+                    getJSON(query: query.text!, code: ctry.key)
+                    break
+                }else{
+                    continue
+                }
             }
+            
+        case 1:
+            var request = URLRequest(url: URL(string: "https://www.sonymusic.co.jp/json/search/category/artist/start/0/count/99")!)
+            var counter = 0
+            var dataString = String()
+            var responseText = [String: String]()
+            
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            request.httpMethod = "post"
+            if let content = query.text{
+                request.httpBody = ("word=" + content).data(using: .utf8)
+                print(content)
+            }
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                guard let data = data, error == nil else {
+                    return
+                }
+                if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
+                    // check for http errors
+                    return
+                }
+                
+                dataString = String(data: data, encoding: .utf8)!
+                dataString = dataString.replacingOccurrences(of: "callback(", with: "")
+                dataString = dataString.replacingOccurrences(of: ")", with: "")
+                
+                var jsonResult = NSDictionary()
+                
+                do{
+                    jsonResult = try JSONSerialization.jsonObject(with: dataString.data(using: .utf8)!, options:.allowFragments) as! NSDictionary
+                } catch let error as NSError {
+                    print(error)
+                }
+                if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
+                    if resultCount.count > 0{
+                        for item in resultCount{
+                            if let artist = (item as! NSDictionary)["artistName"] as? String, let artistPage = (item as! NSDictionary)["artistPage"] as? String{
+                                print("Start Download")
+                                
+                                responseText[artist] = artistPage
+                                
+                                counter += 1
+                                if counter == resultCount.count{
+                                    DispatchQueue.main.async {
+                                        let alert = UIAlertController(title: nil, message: "Select artist to begin search.", preferredStyle: .actionSheet)
+                                        
+                                        for (artist, artistPage) in responseText{
+                                            alert.addAction(UIAlertAction(title: artist, style: .default, handler: { _ in
+                                                self.getSONY(artistPage: artistPage)
+                                            }))
+                                        }
+                                        
+                                        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+                                        self.present(alert, animated: true, completion: nil)
+                                    }
+                                }
+                                
+                            }
+                        }
+                    }else{
+                        DispatchQueue.main.async {
+                            let alert = UIAlertController(title: "Cannot found result", message: nil, preferredStyle: .alert)
+                            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                            self.present(alert, animated: true, completion: nil)
+                        }
+                    }
+                }
+                
+            }
+            task.resume()
+            
+        default:
+            break
+        }
+        
+    }
+    @IBAction func sourceChange(_ sender: UISegmentedControl) {
+        switch sender.selectedSegmentIndex{
+        case 1:
+            countryList.isEnabled = false
+        default:
+            countryList.isEnabled = true
         }
     }
     
@@ -94,8 +181,57 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
     var keys = [String]()
     var imgs = [String:UIImage]()
     
+    
     @objc func dismissPicker(){
         view.endEditing(true)
+    }
+    func getSONY(artistPage: String){
+        var dataString = String()
+        print("https://www.sonymusic.co.jp/json\(artistPage)discography/start/0/count/99")
+        let url: URL = URL(string: "https://www.sonymusic.co.jp/json\(artistPage)discography/start/0/count/99")!
+        let defaultSession = Foundation.URLSession(configuration: URLSessionConfiguration.default)
+        let task = defaultSession.dataTask(with: url) {
+            (data, response, error) in
+            if error != nil {
+                print("Failed to download data")
+            }else {
+                dataString = String(data: data!, encoding: .utf8)!
+                dataString = dataString.replacingOccurrences(of: "callback(", with: "")
+                dataString = dataString.replacingOccurrences(of: ")", with: "")
+                self.parseSONY(dataString.data(using: .utf8)!)
+            }
+        }
+        task.resume()
+    }
+    func parseSONY(_ data: Data){
+        var jsonResult = NSDictionary()
+        do{
+            jsonResult = try JSONSerialization.jsonObject(with: data, options:.allowFragments) as! NSDictionary
+        } catch let error as NSError {
+            print(error)
+        }
+        if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
+            if resultCount.count > 0{
+                for item in resultCount{
+                    if var jacket = (item as! NSDictionary)["jacketImage"] as? String, let artist = (item as! NSDictionary)["artistName"] as? String, let jTitle = (item as! NSDictionary)["title"] as? String{
+                        print("Start Download")
+                        
+                        jacket = jacket.replacingOccurrences(of: "240_240", with: "\(width)_\(height)")
+                        let fullString = artist + " - " + jTitle
+                        self.results[fullString] = "https://www.sonymusic.co.jp" + jacket
+                        print("https://www.sonymusic.co.jp" + jacket)
+                    }
+                    keys = Array(results.keys)
+                    downloadImg(num: resultCount.count)
+                }
+            }else{
+                DispatchQueue.main.async {
+                    let alert = UIAlertController(title: "Cannot found result", message: nil, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
+            }
+        }
     }
     func getJSON(query: String, code: String){
         let queryP = query.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!
@@ -168,7 +304,7 @@ class ViewController: UIViewController, UIPickerViewDataSource, UIPickerViewDele
             print("Start Download")
             DispatchQueue.global(qos: .default).async {
                 DownloadPhoto().get(url: URL(string: value)!) { data, response, error in
-                    guard let imgData = data, error == nil else { return }
+                    guard let imgData = data, error == nil else { counter = counter + 1; return }
                     self.imgs[key] = UIImage(data: imgData)
                     counter = counter + 1
                     group.leave()
@@ -265,7 +401,11 @@ class artworkCell: UICollectionViewCell{
 
 class trySailViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource{
     
+    var width = 1000
+    var height = 1000
+    
     var results = [UIImage]()
+    var jacketTitle = [String]()
     @IBOutlet weak var artworkList: UICollectionView!
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -280,7 +420,7 @@ class trySailViewController: UIViewController, UICollectionViewDelegate, UIColle
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectCell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
-        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: jacketTitle[indexPath.row], message: nil, preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: "Save to Camera Roll", style: .default, handler: { _ in
             UIImageWriteToSavedPhotosAlbum(self.results[indexPath.row], nil, nil, nil)
         }))
@@ -305,14 +445,14 @@ class trySailViewController: UIViewController, UICollectionViewDelegate, UIColle
         if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
             if resultCount.count > 0{
                 for item in resultCount{
-                    if let jacket = (item as! NSDictionary)["jacketImage"] as? String{
+                    if let jacket = (item as! NSDictionary)["jacketImage"] as? String, let artist = (item as! NSDictionary)["artistName"] as? String, let jTitle = (item as! NSDictionary)["title"] as? String{
                         print("Start Download")
                         
-                            DownloadPhoto().get(url: URL(string: "https://www.sonymusic.co.jp" + jacket.replacingOccurrences(of: "240_240", with: "1000_1000"))!) { data, response, error in
+                            DownloadPhoto().get(url: URL(string: "https://www.sonymusic.co.jp" + jacket.replacingOccurrences(of: "240_240", with: "\(width)_\(height)"))!) { data, response, error in
                                 guard let imgData = data, error == nil else { return }
                                 
                                 self.results.append(UIImage(data: imgData)!)
-                                
+                                self.jacketTitle.append(artist + " - " + jTitle)
                                 counter = counter + 1
                                 
                                 if counter == resultCount.count{
@@ -338,6 +478,9 @@ class trySailViewController: UIViewController, UICollectionViewDelegate, UIColle
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        width = userDefault.integer(forKey: "width")
+        height = userDefault.integer(forKey: "height")
         
         artworkList.delegate = self
         artworkList.dataSource = self
@@ -365,7 +508,11 @@ class trySailViewController: UIViewController, UICollectionViewDelegate, UIColle
 
 class soraViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource{
     
+    var jacketTitle = [String]()
     var results = [UIImage]()
+    var width = 1000
+    var height = 1000
+    
     @IBOutlet weak var artworkList: UICollectionView!
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -380,7 +527,7 @@ class soraViewController: UIViewController, UICollectionViewDelegate, UICollecti
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectCell = collectionView.dequeueReusableCell(withReuseIdentifier: "artwork", for: indexPath) as! artworkCell
-        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: jacketTitle[indexPath.row], message: nil, preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: "Save to Camera Roll", style: .default, handler: { _ in
             UIImageWriteToSavedPhotosAlbum(self.results[indexPath.row], nil, nil, nil)
         }))
@@ -405,14 +552,14 @@ class soraViewController: UIViewController, UICollectionViewDelegate, UICollecti
         if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
             if resultCount.count > 0{
                 for item in resultCount{
-                    if let jacket = (item as! NSDictionary)["jacketImage"] as? String{
+                    if let jacket = (item as! NSDictionary)["jacketImage"] as? String, let artist = (item as! NSDictionary)["artistName"] as? String, let jTitle = (item as! NSDictionary)["title"] as? String{
                         print("Start Download")
                         
-                        DownloadPhoto().get(url: URL(string: "https://www.sonymusic.co.jp" + jacket.replacingOccurrences(of: "240_240", with: "1000_1000"))!) { data, response, error in
+                        DownloadPhoto().get(url: URL(string: "https://www.sonymusic.co.jp" + jacket.replacingOccurrences(of: "240_240", with: "\(width)_\(height)"))!) { data, response, error in
                             guard let imgData = data, error == nil else { return }
                             
                             self.results.append(UIImage(data: imgData)!)
-                            
+                            self.jacketTitle.append(artist + " - " + jTitle)
                             counter = counter + 1
                             
                             if counter == resultCount.count{
@@ -439,6 +586,9 @@ class soraViewController: UIViewController, UICollectionViewDelegate, UICollecti
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        width = userDefault.integer(forKey: "width")
+        height = userDefault.integer(forKey: "height")
+        
         artworkList.delegate = self
         artworkList.dataSource = self
         
@@ -458,6 +608,84 @@ class soraViewController: UIViewController, UICollectionViewDelegate, UICollecti
             }
         }
         task.resume()
+        
+    }
+    
+}
+
+class sonySearchViewController: UIViewController{
+    
+    @IBOutlet weak var query: UITextField!
+    @IBAction func search(_ sender: UIButton) {
+        
+        var dataString = String()
+        var responseText = String()
+        var request = URLRequest(url: URL(string: "https://www.sonymusic.co.jp/json/search/category/artist/start/0/count/99")!)
+        var counter = 0
+        
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "post"
+        if let content = query.text{
+            request.httpBody = ("word=" + content).data(using: .utf8)
+            print(content)
+        }
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                return
+            }
+            if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
+                // check for http errors
+                return
+            }
+            
+            dataString = String(data: data, encoding: .utf8)!
+            dataString = dataString.replacingOccurrences(of: "callback(", with: "")
+            dataString = dataString.replacingOccurrences(of: ")", with: "")
+            
+            var jsonResult = NSDictionary()
+            
+            do{
+                jsonResult = try JSONSerialization.jsonObject(with: dataString.data(using: .utf8)!, options:.allowFragments) as! NSDictionary
+            } catch let error as NSError {
+                print(error)
+            }
+            if let resultCount = jsonResult.value(forKey: "items") as? NSArray{
+                if resultCount.count > 0{
+                    for item in resultCount{
+                        if let artist = (item as! NSDictionary)["artistName"] as? String, let artistPage = (item as! NSDictionary)["artistPage"] as? String{
+                            print("Start Download")
+                            
+                            responseText += artist + ": \nPage: " + artistPage + "\n\n"
+                            counter += 1
+                            if counter == resultCount.count{
+                                DispatchQueue.main.async {
+                                    let alert = UIAlertController(title: nil, message: responseText, preferredStyle: .alert)
+                                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                                    self.present(alert, animated: true, completion: nil)
+                                }
+                            }
+                            
+                        }
+                    }
+                }else{
+                    DispatchQueue.main.async {
+                        let alert = UIAlertController(title: "Cannot found result", message: nil, preferredStyle: .alert)
+                        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self.present(alert, animated: true, completion: nil)
+                    }
+                }
+            }
+            
+        }
+        task.resume()
+        
+        
+        
+    }
+    
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
     }
     

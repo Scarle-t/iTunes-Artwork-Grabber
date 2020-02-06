@@ -19,20 +19,20 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Search Artwork..." textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ZQD-9p-djU">
-                                <rect key="frame" x="16" y="69" width="153" height="30"/>
+                                <rect key="frame" x="16" y="121" width="153" height="30"/>
                                 <nil key="textColor"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="l2k-DN-cI3">
-                                <rect key="frame" x="275" y="69" width="48" height="30"/>
+                                <rect key="frame" x="275" y="121" width="48" height="30"/>
                                 <state key="normal" title="Search"/>
                                 <connections>
                                     <action selector="search:" destination="BYZ-38-t0r" eventType="touchUpInside" id="qhA-cQ-vVl"/>
                                 </connections>
                             </button>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="nJZ-DK-f7Y">
-                                <rect key="frame" x="16" y="107" width="343" height="503"/>
+                                <rect key="frame" x="16" y="159" width="343" height="451"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="spA-vp-4fT">
                                     <size key="itemSize" width="90" height="90"/>
@@ -72,10 +72,10 @@
                                 </cells>
                             </collectionView>
                             <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="CPU-uL-wMW">
-                                <rect key="frame" x="331" y="74" width="20" height="20"/>
+                                <rect key="frame" x="331" y="126" width="20" height="20"/>
                             </activityIndicatorView>
                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" adjustsFontForContentSizeCategory="YES" minimumFontSize="10" translatesAutoresizingMaskIntoConstraints="NO" id="zvF-fu-FBr">
-                                <rect key="frame" x="177" y="69" width="90" height="30"/>
+                                <rect key="frame" x="177" y="121" width="90" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="90" id="Ktk-M8-CeN"/>
                                 </constraints>
@@ -102,12 +102,27 @@
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Search" id="iy6-9k-UWW"/>
+                    <navigationItem key="navigationItem" title="Search" id="iy6-9k-UWW">
+                        <barButtonItem key="rightBarButtonItem" style="plain" id="KCQ-z5-6aj">
+                            <segmentedControl key="customView" opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" selectedSegmentIndex="0" id="dGN-rK-woZ">
+                                <rect key="frame" x="232" y="7" width="127" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <segments>
+                                    <segment title="iTunes"/>
+                                    <segment title="Sony JP"/>
+                                </segments>
+                                <connections>
+                                    <action selector="sourceChange:" destination="BYZ-38-t0r" eventType="valueChanged" id="hdB-nZ-TB6"/>
+                                </connections>
+                            </segmentedControl>
+                        </barButtonItem>
+                    </navigationItem>
                     <connections>
                         <outlet property="artworkList" destination="nJZ-DK-f7Y" id="6AS-cq-6L9"/>
                         <outlet property="countryList" destination="zvF-fu-FBr" id="JzA-i6-huE"/>
                         <outlet property="query" destination="ZQD-9p-djU" id="f7s-Oj-VgG"/>
                         <outlet property="searchBtn" destination="l2k-DN-cI3" id="haU-0I-ZSY"/>
+                        <outlet property="sourceSeg" destination="dGN-rK-woZ" id="x2o-e4-ft6"/>
                         <outlet property="spinner" destination="CPU-uL-wMW" id="AJg-S5-vDz"/>
                     </connections>
                 </viewController>
@@ -309,6 +324,7 @@
                         <segue destination="hf2-Gn-fle" kind="relationship" relationship="viewControllers" id="T9h-Wz-vvy"/>
                         <segue destination="MRD-7v-YGY" kind="relationship" relationship="viewControllers" id="r4l-eu-Eu7"/>
                         <segue destination="KdA-lI-hdv" kind="relationship" relationship="viewControllers" id="Deb-8g-qFq"/>
+                        <segue destination="Ala-cU-5yi" kind="relationship" relationship="viewControllers" id="f5R-sW-md8"/>
                     </connections>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="enF-I1-jXW" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -344,8 +360,8 @@
                         <offsetWrapper key="titlePositionAdjustment" horizontal="0.0" vertical="-16"/>
                     </tabBarItem>
                     <toolbarItems/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="cOp-VN-rtP">
-                        <rect key="frame" x="0.0" y="20" width="375" height="44"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" largeTitles="YES" id="cOp-VN-rtP">
+                        <rect key="frame" x="0.0" y="20" width="375" height="96"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <nil name="viewControllers"/>
@@ -377,6 +393,42 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wNr-pa-DBc" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1073" y="-638"/>
+        </scene>
+        <!--Sony Search-->
+        <scene sceneID="DOw-ua-Ew2">
+            <objects>
+                <viewController id="IJQ-Op-kE1" customClass="sonySearchViewController" customModule="iTunes_Artwork_Grabber_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="vSy-5q-ks6">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Artist Name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="tpd-Vf-dlf">
+                                <rect key="frame" x="16" y="132" width="179" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <nil key="textColor"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8mK-e3-dmf">
+                                <rect key="frame" x="233" y="132" width="46" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <connections>
+                                    <action selector="search:" destination="IJQ-Op-kE1" eventType="touchUpInside" id="Yq9-Kr-LLB"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <viewLayoutGuide key="safeArea" id="RF7-4f-Aj8"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Sony Search" id="tWZ-PJ-HU4"/>
+                    <connections>
+                        <outlet property="query" destination="tpd-Vf-dlf" id="vnY-B9-ZPs"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="IS5-1B-48K" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2012" y="-1387.5562218890557"/>
         </scene>
         <!--Special-->
         <scene sceneID="fxz-pL-Hzh">
@@ -502,7 +554,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pJi-xj-Pmu" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2840.8000000000002" y="-638.2308845577212"/>
+            <point key="canvasLocation" x="2894" y="-638"/>
         </scene>
         <!--TrySail-->
         <scene sceneID="s1h-pg-8lU">
@@ -563,7 +615,28 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wem-wM-DyW" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2840.8000000000002" y="133.5832083958021"/>
+            <point key="canvasLocation" x="2894" y="134"/>
+        </scene>
+        <!--Sony Search-->
+        <scene sceneID="aUR-nr-cj2">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Ala-cU-5yi" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Sony Search" id="ue1-vp-rPe">
+                        <offsetWrapper key="titlePositionAdjustment" horizontal="0.0" vertical="-16"/>
+                    </tabBarItem>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" largeTitles="YES" id="BCV-Pe-z4J">
+                        <rect key="frame" x="0.0" y="20" width="375" height="96"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="IJQ-Op-kE1" kind="relationship" relationship="rootViewController" id="Pxs-3w-O6s"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Lje-BF-mqj" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1073" y="-1387"/>
         </scene>
     </scenes>
 </document>
